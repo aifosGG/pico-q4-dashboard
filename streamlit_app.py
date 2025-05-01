@@ -10,11 +10,9 @@ st.title("🪙 Probabilidade de Pico no 4º Tri 2025")
 # ---------- 1. Coletar dados -----------------
 fed_prob = fedwatch_probs()
 if fed_prob is None:
-    st.warning("⚠️  FedWatch offline – usando 0 %.")
-    fed_prob = 0.0             # 0‑100 %
-dom_btc  = btc_dominance()              # %
-yield_2y = two_year_yield().value.iloc[-1]  # taxa 2‑y
-nfci     = nfc_index().value.iloc[-1]       # índice condições financeiras
+    st.warning("⚠️  FedWatch offline – usando 0 %.")   # <-- executa antes do score
+    fed_prob = 0.0
+
 etf_df = btc_etf_flows()
 if etf_df.empty:
     st.warning("⚠️  Dados de fluxo ETF indisponíveis.")
@@ -22,18 +20,21 @@ if etf_df.empty:
 else:
     etf_5d_sum = etf_df["Total"].sum()
 
-# ---------- 2. Score sintético 0‑100 ---------
+dom_btc  = btc_dominance()
+yield_2y = two_year_yield().value.iloc[-1] if not two_year_yield().empty else 3.0
+nfci     = nfc_index().value.iloc[-1]       if not nfc_index().empty       else -0.25
+# ---------- 2. Score sintético 0-100 ---------
 def z(val, mean, std):
     return (val - mean) / std
 
 score = (
-    0.25 * (fed_prob / 100) +            # FedWatch
-    0.15 * (1 - z(yield_2y, 3.0, 0.5)) + # curva curta
-    0.15 * (1 - z(nfci, -0.25, 0.3)) +   # condições financeiras
-    0.15 * (z(etf_5d_sum, 500, 500)) +   # fluxo ETFs
-    0.10 * (1 - z(dom_btc, 50, 5)) +     # dominância BTC
-    0.10 * (1 - z(20, 20, 5)) +          # placeholder VIX
-    0.10 * 0.5                           # placeholder EPS ex‑Tech
+    0.25 * (fed_prob / 100) +
+    0.15 * (1 - z(yield_2y, 3.0, 0.5)) +
+    0.15 * (1 - z(nfci, -0.25, 0.3)) +
+    0.15 * (z(etf_5d_sum, 500, 500)) +
+    0.10 * (1 - z(dom_btc, 50, 5)) +
+    0.10 * (1 - z(20, 20, 5)) +
+    0.10 * 0.5
 )
 score = max(0, min(1, score)) * 100
 
