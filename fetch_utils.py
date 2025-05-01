@@ -1,5 +1,6 @@
 
-import pandas as pd, requests, io, os
+import io, os, time, json, requests, pandas as pd
+import streamlit as st   #  ← IMPORTANTE para o @st.cache_data
 
 # ----------- FRED helper -----------------
 FRED_KEY = os.getenv("FRED_KEY", "")
