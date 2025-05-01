@@ -18,25 +18,26 @@ import json, requests
 
 # --- FedWatch -------------------------------------------------
 def fedwatch_probs():
-    """
-    Tenta obter a prob. de corte da próxima reunião via CME.
-    Se demorar >30 s ou falhar, devolve None (painel trata como 0 %).
-    """
     url = ("https://www.cmegroup.com/content/dam/cmegroup/"
            "fedwatch/target-rate-probabilities.json")
     try:
-        r = requests.get(url, timeout=30)      # ↑ timeout 30 s
+        r = requests.get(url, timeout=30)          # timeout maior
         r.raise_for_status()
         data = r.json()
         return float(data["data"][0]["probabilityRateCut"])
-    except (requests.RequestException, KeyError, ValueError):
-        return None         # sinaliza falha silenciosa
+    except Exception:                              # qualquer falha → None
+        return None
 
 def btc_etf_flows():
     url = "https://farside.co.uk/cached_research/bitcoin_etf_flow.csv"
-    csv = requests.get(url, timeout=15).content
-    df = pd.read_csv(io.BytesIO(csv))
-    return df.tail(5)
+    try:
+        r = requests.get(url, timeout=30)
+        r.raise_for_status()
+        df = pd.read_csv(io.BytesIO(r.content))
+        return df.tail(5)
+    except Exception:
+        # devolve DF vazio com as colunas esperadas
+        return pd.DataFrame(columns=["Date", "Ticker", "Total"])
 
 def btc_dominance():
     url = "https://api.coingecko.com/api/v3/global"
