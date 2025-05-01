@@ -14,10 +14,23 @@ def fred_series(series_id):
     )
 
 # ----------- Funções de coleta -----------
+import json, requests
+
+# --- FedWatch -------------------------------------------------
 def fedwatch_probs():
-    url = "https://www.cmegroup.com/content/dam/cmegroup/fedwatch/target-rate-probabilities.json"
-    data = requests.get(url, timeout=15).json()
-    return float(data["data"][0]["probabilityRateCut"])
+    """
+    Tenta obter a prob. de corte da próxima reunião via CME.
+    Se demorar >30 s ou falhar, devolve None (painel trata como 0 %).
+    """
+    url = ("https://www.cmegroup.com/content/dam/cmegroup/"
+           "fedwatch/target-rate-probabilities.json")
+    try:
+        r = requests.get(url, timeout=30)      # ↑ timeout 30 s
+        r.raise_for_status()
+        data = r.json()
+        return float(data["data"][0]["probabilityRateCut"])
+    except (requests.RequestException, KeyError, ValueError):
+        return None         # sinaliza falha silenciosa
 
 def btc_etf_flows():
     url = "https://farside.co.uk/cached_research/bitcoin_etf_flow.csv"
