@@ -41,7 +41,14 @@ def btc_etf_flows():
 
 def btc_dominance():
     url = "https://api.coingecko.com/api/v3/global"
-    return requests.get(url, timeout=15).json()["data"]["market_cap_percentage"]["btc"]
+    try:
+        r = requests.get(url, timeout=30)
+        r.raise_for_status()
+        j = r.json()
+        return j["data"]["market_cap_percentage"]["btc"]
+    except Exception:
+        # se CoinGecko falhar, retorna 50 % e deixa o painel avisar
+        return None
 
 def two_year_yield():
     return fred_series("DGS2").tail(30)
