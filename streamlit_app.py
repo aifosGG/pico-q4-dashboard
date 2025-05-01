@@ -29,7 +29,9 @@ else:
 
 # Dominância BTC (sempre numérico)
 dom_btc = btc_dominance()
-
+if dom_btc is None:
+    st.warning("⚠️  CoinGecko offline – usando 50 % de dominância BTC.")
+    dom_btc = 50.0
 # Curva curta – rendimento Treasury 2-y
 yield_df = two_year_yield()
 yield_2y = yield_df.value.iloc[-1] if not yield_df.empty else 3.0   # fallback 3 %
