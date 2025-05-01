@@ -8,12 +8,19 @@ st.set_page_config(page_title="Q4 Peak Probability", layout="wide")
 st.title("🪙 Probabilidade de Pico no 4º Tri 2025")
 
 # ---------- 1. Coletar dados -----------------
-fed_prob = fedwatch_probs()             # 0‑100 %
+fed_prob = fedwatch_probs()
+if fed_prob is None:
+    st.warning("⚠️  FedWatch offline – usando 0 %.")
+    fed_prob = 0.0             # 0‑100 %
 dom_btc  = btc_dominance()              # %
 yield_2y = two_year_yield().value.iloc[-1]  # taxa 2‑y
 nfci     = nfc_index().value.iloc[-1]       # índice condições financeiras
-etf_df   = btc_etf_flows()              # últimos 5 dias
-etf_5d_sum = etf_df["Total"].sum()
+etf_df = btc_etf_flows()
+if etf_df.empty:
+    st.warning("⚠️  Dados de fluxo ETF indisponíveis.")
+    etf_5d_sum = 0
+else:
+    etf_5d_sum = etf_df["Total"].sum()
 
 # ---------- 2. Score sintético 0‑100 ---------
 def z(val, mean, std):
