@@ -17,38 +17,42 @@ def fred_series(series_id):
 import json, requests
 
 # --- FedWatch -------------------------------------------------
+@st.cache_data(ttl=14400)  # guarda por 4 h
 def fedwatch_probs():
     url = ("https://www.cmegroup.com/content/dam/cmegroup/"
            "fedwatch/target-rate-probabilities.json")
-    try:
-        r = requests.get(url, timeout=30)          # timeout maior
-        r.raise_for_status()
-        data = r.json()
-        return float(data["data"][0]["probabilityRateCut"])
-    except Exception:                              # qualquer falha → None
-        return None
+    for _ in range(3):
+        try:
+            r = requests.get(url, timeout=30)
+            r.raise_for_status()
+            return float(r.json()["data"][0]["probabilityRateCut"])
+        except Exception:
+            time.sleep(2)
+    return None
 
+@st.cache_data(ttl=14400)
 def btc_etf_flows():
     url = "https://farside.co.uk/cached_research/bitcoin_etf_flow.csv"
-    try:
-        r = requests.get(url, timeout=30)
-        r.raise_for_status()
-        df = pd.read_csv(io.BytesIO(r.content))
-        return df.tail(5)
-    except Exception:
-        # devolve DF vazio com as colunas esperadas
-        return pd.DataFrame(columns=["Date", "Ticker", "Total"])
+    for _ in range(3):
+        try:
+            r = requests.get(url, timeout=30)
+            r.raise_for_status()
+            df = pd.read_csv(io.BytesIO(r.content))
+            return df.tail(5)
+        except Exception:
+            time.sleep(2)
+    return pd.DataFrame()  # vazio
 
+@st.cache_data(ttl=3600)
 def btc_dominance():
     url = "https://api.coingecko.com/api/v3/global"
-    try:
-        r = requests.get(url, timeout=30)
-        r.raise_for_status()
-        j = r.json()
-        return j["data"]["market_cap_percentage"]["btc"]
-    except Exception:
-        # se CoinGecko falhar, retorna 50 % e deixa o painel avisar
-        return None
+    for _ in range(3):
+        try:
+            data = requests.get(url, timeout=30).json()
+            return data["data"]["market_cap_percentage"]["btc"]
+        except Exception:
+            time.sleep(2)
+    return None
 
 def two_year_yield():
     return fred_series("DGS2").tail(30)
